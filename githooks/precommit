@@ -1,0 +1,17 @@
+#!/bin/bash
+# Pre-commit hook to validate code before committing.
+
+set -e
+
+echo "📢 Executing pre-commit validations..."
+
+echo "🔍 Running ESLint..."
+pnpm run lint
+
+echo "💅 Verifying format with Prettier..."
+pnpm run format:check
+
+echo "🧪 Running unit tests..."
+pnpm run test:cov
+
+echo "✅ All pre-commit validators have passed."

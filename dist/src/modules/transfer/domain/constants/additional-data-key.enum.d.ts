@@ -1,0 +1,7 @@
+export declare enum AdditionalDataKey {
+    KEY = "KEY",
+    CELLPHONE = "CELLPHONE",
+    COMPANY_NAME = "COMPANY_NAME",
+    RESPONSE_CODE = "RESPONSE_CODE",
+    RESPONSE_MESSAGE = "RESPONSE_MESSAGE"
+}
