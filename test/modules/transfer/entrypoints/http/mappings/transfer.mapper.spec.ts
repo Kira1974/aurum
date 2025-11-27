@@ -64,7 +64,7 @@ describe('TransferMapper', () => {
       const result = TransferMapper.toCreateTransferResponseDto(transfer);
 
       // Assert
-      // TODO: Cuando se implemente la lógica del dominio, estos valores serán generados por el dominio
+      // El gateway siempre devuelve estos valores, pero antes de aplicar el resultado del gateway serán undefined
       expect(result.responseCode).toBe('');
       expect(result.message).toBe('');
       expect(result.data).toBeDefined();
@@ -77,10 +77,10 @@ describe('TransferMapper', () => {
         '3001234567',
         'Tu pago de $1000 COP esta pendiente de confirmacion.'
       );
-      const transfer = Transfer.create(TransferFactory.create(), notification);
+      const transfer = TransferFactory.create();
 
       // Act
-      const result = TransferMapper.toCreateTransferResponseDto(transfer);
+      const result = TransferMapper.toCreateTransferResponseDto(transfer, notification);
 
       // Assert
       expect(result.data).toBeDefined();

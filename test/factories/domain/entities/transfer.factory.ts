@@ -1,10 +1,9 @@
 import { Transfer, TransferProps } from '~/modules/transfer/domain/entities/transfer.entity';
-import { Notification } from '~/modules/transfer/domain/value-objects/notification.vo';
 
 import { AmountFactory, TransferContextFactory, TransactionPartiesFactory } from '../value-objects';
 
 export class TransferFactory {
-  static create(overrides?: Partial<TransferProps>, notification?: Notification): Transfer {
+  static create(overrides?: Partial<TransferProps>): Transfer {
     const props: TransferProps = {
       amount: AmountFactory.create(),
       description: 'Test transfer',
@@ -13,7 +12,7 @@ export class TransferFactory {
       transactionId: 'TX-001',
       ...overrides
     };
-    return Transfer.create(props, notification);
+    return Transfer.create(props);
   }
 
   static createWithTransactionId(transactionId: string): Transfer {

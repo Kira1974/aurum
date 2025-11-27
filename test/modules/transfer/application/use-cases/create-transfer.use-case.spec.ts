@@ -68,10 +68,17 @@ describe('CreateTransferUseCase', () => {
       // Assert
       expect(mockCredClient.createTransfer).toHaveBeenCalledWith(transfer);
       expect(mockTransferRepository.save).toHaveBeenCalled();
-      expect(result).toBeInstanceOf(Transfer);
-      expect(result.externalTransactionId).toBe('EXT-001');
-      expect(result.additionalData?.[AdditionalDataKey.RESPONSE_CODE]).toBe('SUCCESS');
-      expect(result.additionalData?.[AdditionalDataKey.RESPONSE_MESSAGE]).toBe('Transaction completed successfully');
+      expect(result.transfer).toBeInstanceOf(Transfer);
+      expect(result.transfer.externalTransactionId).toBe('EXT-001');
+      expect(result.transfer.status).toBe(TransferStatus.SUCCESS);
+      expect(result.transfer.additionalData?.[AdditionalDataKey.RESPONSE_CODE]).toBe('SUCCESS');
+      expect(result.transfer.additionalData?.[AdditionalDataKey.RESPONSE_MESSAGE]).toBe(
+        'Transaction completed successfully'
+      );
+      expect(result.notification).toBeDefined();
+      expect(result.notification!.message).toContain('Abono $');
+      expect(result.notification!.message).toContain('Bre-B');
+      expect(result.notification!.message).toMatch(/Hora: \d{2}:\d{2}:\d{2}/);
     });
 
     it('should handle errors from gateway client', async () => {

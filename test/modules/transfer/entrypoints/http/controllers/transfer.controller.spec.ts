@@ -64,7 +64,9 @@ describe('TransferController', () => {
         }
       });
 
-      (mockCreateTransferUseCase.execute as jest.Mock).mockResolvedValue(mockExecutedTransfer);
+      (mockCreateTransferUseCase.execute as jest.Mock).mockResolvedValue({
+        transfer: mockExecutedTransfer
+      });
 
       // Act
       const result = await controller.createTransfer(dto);

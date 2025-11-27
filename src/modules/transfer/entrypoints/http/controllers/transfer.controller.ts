@@ -24,6 +24,6 @@ export class TransferController {
   async createTransfer(@Body() dto: CreateTransferRequestDto): Promise<CreateTransferResponseDto> {
     this.logger.log(`Received createTransfer request with DTO: ${JSON.stringify(dto)}`); //TODO: Select fields for trace
     const createTransferResult = await this.createTransferUseCase.execute(TransferMapper.toEntity(dto));
-    return TransferMapper.toCreateTransferResponseDto(createTransferResult);
+    return TransferMapper.toCreateTransferResponseDto(createTransferResult.transfer, createTransferResult.notification);
   }
 }

@@ -17,7 +17,6 @@ import {
   Notification
 } from '~/modules/transfer/domain/value-objects';
 import { AdditionalDataKey } from '~/modules/transfer/domain/constants/additional-data-key.enum';
-import { TransferStatus } from '~/modules/transfer/domain/constants/transfer-status.enum';
 import { buildJsonFromEnum } from '~/shared/utils/util-json.util';
 
 export class TransferMapper {
@@ -39,20 +38,17 @@ export class TransferMapper {
     return Transfer.create(props);
   }
 
-  static toCreateTransferResponseDto(transfer: Transfer): CreateTransferResponseDto {
-    // TODO: El dominio generará responseCode y message si no vienen del gateway
-    // Por ahora, se obtienen de additionalData (donde se guardan cuando vienen del gateway)
-    const responseCode =
-      (transfer.additionalData?.[AdditionalDataKey.RESPONSE_CODE] as TransferStatus | undefined) ?? '';
-    const message = transfer.additionalData?.[AdditionalDataKey.RESPONSE_MESSAGE] ?? '';
+  static toCreateTransferResponseDto(transfer: Transfer, notification?: Notification): CreateTransferResponseDto {
+    const responseCode = transfer.getResponseCode() ?? '';
+    const message = transfer.getMessage() ?? '';
     const transaction = this.toTransactionResponseDto(transfer);
 
-    const notification = transfer.notification ? this.toNotificationDto(transfer.notification) : undefined;
+    const notificationDto = notification ? this.toNotificationDto(notification) : undefined;
 
     const additionalData = transfer.additionalData ? this.toAdditionalData(transfer.additionalData) : undefined;
     const data: TransactionDataDto = {
       transaction,
-      notification,
+      notification: notificationDto,
       additionalData
     };
 

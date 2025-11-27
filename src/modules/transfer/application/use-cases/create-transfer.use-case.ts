@@ -4,6 +4,7 @@ import { ThLogger, ThLoggerService } from 'themis';
 import { TOKENS } from '~/shared/constants/tokens.constant';
 import { Transfer } from '~/modules/transfer/domain/entities/transfer.entity';
 import { ICreateTransferUseCase, IGatewayClient, ITransferRepository } from '~/modules/transfer/application/ports';
+import { CreateTransferResult } from './create-transfer-result.type';
 
 @Injectable()
 export class CreateTransferUseCase implements ICreateTransferUseCase {
@@ -19,12 +20,16 @@ export class CreateTransferUseCase implements ICreateTransferUseCase {
     this.logger = this.loggerService.getLogger(CreateTransferUseCase.name);
   }
 
-  async execute(transfer: Transfer): Promise<Transfer> {
+  async execute(transfer: Transfer): Promise<CreateTransferResult> {
     this.logger.log(`Executing create transfer ${transfer.id} for transaction ${transfer.transactionId}`);
 
     const transferRes = await this.gatewayClient.createTransfer(transfer);
     const updatedTransfer = transfer.applyGatewayResult(transferRes);
+    const notification = updatedTransfer.buildNotificationIfNeeded();
     await this.transferRepository.save(updatedTransfer);
-    return updatedTransfer;
+    return {
+      transfer: updatedTransfer,
+      notification: notification ?? undefined
+    };
   }
 }

@@ -43,7 +43,7 @@ export class CredibancoClientAdapter implements IGatewayClient {
         //TODO: OJO
         data: {
           transactionId: 'TX-0001',
-          responseCode: TransferStatus.PENDING,
+          responseCode: TransferStatus.SUCCESS,
           message: 'Payment pending',
           externalTransactionId: '20251120135790864CRB001763694229136',
           additionalData: {

@@ -311,5 +311,300 @@ describe('Transfer', () => {
       expect(result.externalTransactionId).toBe('EXT-12345');
       expect(transfer.externalTransactionId).toBe('');
     });
+
+    it('should map responseCode from gateway to status in domain', () => {
+      // Arrange
+      const transfer = createTransfer();
+      const gatewayResult: TransferGatewayResult = {
+        transactionId: 'TX-001',
+        externalTransactionId: 'EXT-001',
+        responseCode: TransferStatus.SUCCESS,
+        message: 'Transaction completed'
+      };
+
+      // Act
+      const result = transfer.applyGatewayResult(gatewayResult);
+
+      // Assert
+      expect(result.status).toBe(TransferStatus.SUCCESS);
+      expect(result.additionalData?.[AdditionalDataKey.RESPONSE_CODE]).toBe('SUCCESS');
+    });
+
+    it('should have PENDING as default status when creating transfer', () => {
+      // Arrange & Act
+      const transfer = createTransfer();
+
+      // Assert
+      expect(transfer.status).toBe(TransferStatus.PENDING);
+    });
+  });
+
+  describe('getResponseCode', () => {
+    const createTransfer = (additionalData?: Record<string, string>): Transfer => {
+      const amount = new Amount(1000, 'COP');
+      const context = new TransactionContext('POS-123', 'TERM-001', 'C79', '3108de04');
+      const payer = new TransactionParty('CUST-001', 'CC', '1234567890', 'Payer Name', '3001234567');
+      const payee = new TransactionParty(
+        'CUST-002',
+        'CC',
+        '0987654321',
+        'Payee Name',
+        '3007654321',
+        new AccountInfo('ACCOUNT-001')
+      );
+      const transactionParties = new TransactionParties(payer, payee);
+
+      return Transfer.create({
+        amount,
+        description: 'Test transfer',
+        context,
+        transactionParties,
+        transactionId: 'TX-001',
+        additionalData
+      });
+    };
+
+    it('should return responseCode from additionalData when exists', () => {
+      // Arrange
+      const transfer = createTransfer({
+        [AdditionalDataKey.RESPONSE_CODE]: TransferStatus.SUCCESS
+      });
+
+      // Act
+      const result = transfer.getResponseCode();
+
+      // Assert
+      expect(result).toBe(TransferStatus.SUCCESS);
+    });
+
+    it('should return undefined when responseCode does not exist in additionalData', () => {
+      // Arrange
+      const transfer = createTransfer();
+
+      // Act
+      const result = transfer.getResponseCode();
+
+      // Assert
+      expect(result).toBeUndefined();
+    });
+  });
+
+  describe('getMessage', () => {
+    const createTransfer = (additionalData?: Record<string, string>): Transfer => {
+      const amount = new Amount(1000, 'COP');
+      const context = new TransactionContext('POS-123', 'TERM-001', 'C79', '3108de04');
+      const payer = new TransactionParty('CUST-001', 'CC', '1234567890', 'Payer Name', '3001234567');
+      const payee = new TransactionParty(
+        'CUST-002',
+        'CC',
+        '0987654321',
+        'Payee Name',
+        '3007654321',
+        new AccountInfo('ACCOUNT-001')
+      );
+      const transactionParties = new TransactionParties(payer, payee);
+
+      return Transfer.create({
+        amount,
+        description: 'Test transfer',
+        context,
+        transactionParties,
+        transactionId: 'TX-001',
+        additionalData
+      });
+    };
+
+    it('should return message from additionalData when exists', () => {
+      // Arrange
+      const transfer = createTransfer({
+        [AdditionalDataKey.RESPONSE_MESSAGE]: 'Transaction completed'
+      });
+
+      // Act
+      const result = transfer.getMessage();
+
+      // Assert
+      expect(result).toBe('Transaction completed');
+    });
+
+    it('should return undefined when message does not exist in additionalData', () => {
+      // Arrange
+      const transfer = createTransfer();
+
+      // Act
+      const result = transfer.getMessage();
+
+      // Assert
+      expect(result).toBeUndefined();
+    });
+  });
+
+  describe('buildNotificationIfNeeded', () => {
+    const createTransfer = (status?: TransferStatus): Transfer => {
+      const amount = new Amount(1000, 'COP');
+      const context = new TransactionContext('POS-123', 'TERM-001', 'C79', '3108de04');
+      const payee = new TransactionParty(
+        'CUST-002',
+        'CC',
+        '0987654321',
+        'Payee Name',
+        '3007654321',
+        new AccountInfo('ACCOUNT-001')
+      );
+      const transactionParties = new TransactionParties(undefined, payee);
+
+      return Transfer.create({
+        amount,
+        description: 'Test transfer',
+        context,
+        transactionParties,
+        transactionId: 'TX-001',
+        status
+      });
+    };
+
+    it('should return Notification when status is SUCCESS and payee cellphone is provided', () => {
+      // Arrange
+      const transfer = createTransfer(TransferStatus.SUCCESS);
+      expect(transfer.status).toBe(TransferStatus.SUCCESS);
+      expect(transfer.transactionParties.payee.cellphone).toBe('3007654321');
+
+      // Act
+      const result = transfer.buildNotificationIfNeeded();
+
+      // Assert
+      expect(result).not.toBeNull();
+      expect(result!.channel).toBe('SMS');
+      expect(result!.value).toBe('3007654321');
+      expect(result!.message).toContain('Payee Name');
+      expect(result!.message).toContain('1.000');
+      expect(result!.message).toContain('Bre-B');
+      expect(result!.message).toMatch(/Hora: \d{2}:\d{2}:\d{2}/);
+    });
+
+    it('should extract last 4 digits from ACCOUNT_NUMBER_KEY_RESOLUTION when available', () => {
+      // Arrange
+      const amount = new Amount(5000, 'COP');
+      const context = new TransactionContext('POS-123', 'TERM-001', 'C79', '3108de04');
+      const payee = new TransactionParty(
+        'CUST-002',
+        'CC',
+        '0987654321',
+        'Payee Name',
+        '3007654321',
+        new AccountInfo('ACCOUNT-001')
+      );
+      const transactionParties = new TransactionParties(undefined, payee);
+      const transfer = Transfer.create({
+        amount,
+        description: 'Test transfer',
+        context,
+        transactionParties,
+        transactionId: 'TX-001',
+        status: TransferStatus.SUCCESS,
+        additionalData: {
+          [AdditionalDataKey.ACCOUNT_NUMBER_KEY_RESOLUTION]: '1234567890'
+        }
+      });
+
+      // Act
+      const result = transfer.buildNotificationIfNeeded();
+
+      // Assert
+      expect(result).not.toBeNull();
+      expect(result!.message).toContain('*7890');
+    });
+
+    it('should use empty string for account digits when ACCOUNT_NUMBER_KEY_RESOLUTION is not available', () => {
+      // Arrange
+      const transfer = createTransfer(TransferStatus.SUCCESS);
+
+      // Act
+      const result = transfer.buildNotificationIfNeeded();
+
+      // Assert
+      expect(result).not.toBeNull();
+      expect(result!.message).toMatch(/\*\./); // * seguido de punto cuando no hay dígitos
+    });
+
+    it('should return null when status is not SUCCESS', () => {
+      // Arrange
+      const transfer = createTransfer(TransferStatus.PENDING);
+
+      // Act
+      const result = transfer.buildNotificationIfNeeded();
+
+      // Assert
+      expect(result).toBeNull();
+    });
+
+    it('should return null when status is PENDING', () => {
+      // Arrange
+      const transfer = createTransfer(TransferStatus.PENDING);
+
+      // Act
+      const result = transfer.buildNotificationIfNeeded();
+
+      // Assert
+      expect(result).toBeNull();
+    });
+
+    it('should return null when status is SUCCESS but payee cellphone is not provided (empty)', () => {
+      // Arrange
+      const amount = new Amount(1000, 'COP');
+      const context = new TransactionContext('POS-123', 'TERM-001', 'C79', '3108de04');
+      const payee = new TransactionParty(
+        'CUST-002',
+        'CC',
+        '0987654321',
+        'Payee Name',
+        '', // cellphone vacío (opcional, no viene)
+        new AccountInfo('ACCOUNT-001')
+      );
+      const transactionParties = new TransactionParties(undefined, payee);
+      const transfer = Transfer.create({
+        amount,
+        description: 'Test transfer',
+        context,
+        transactionParties,
+        transactionId: 'TX-001',
+        status: TransferStatus.SUCCESS
+      });
+
+      // Act
+      const result = transfer.buildNotificationIfNeeded();
+
+      // Assert
+      expect(result).toBeNull();
+    });
+
+    it('should return null when status is SUCCESS but payee cellphone is only whitespace', () => {
+      // Arrange
+      const amount = new Amount(1000, 'COP');
+      const context = new TransactionContext('POS-123', 'TERM-001', 'C79', '3108de04');
+      const payee = new TransactionParty(
+        'CUST-002',
+        'CC',
+        '0987654321',
+        'Payee Name',
+        '   ', // cellphone solo espacios (considerado como no proporcionado)
+        new AccountInfo('ACCOUNT-001')
+      );
+      const transactionParties = new TransactionParties(undefined, payee);
+      const transfer = Transfer.create({
+        amount,
+        description: 'Test transfer',
+        context,
+        transactionParties,
+        transactionId: 'TX-001',
+        status: TransferStatus.SUCCESS
+      });
+
+      // Act
+      const result = transfer.buildNotificationIfNeeded();
+
+      // Assert
+      expect(result).toBeNull();
+    });
   });
 });
