@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ThLogLevel, ThTracingModule } from 'themis';
+import { MongooseModule } from '@nestjs/mongoose';
 
 import { TransferModule } from '~/modules/transfer/transfer.module';
 
@@ -8,6 +9,9 @@ import { HealthModule } from './modules/health/health.module';
 
 @Module({
   imports: [
+    MongooseModule.forRoot(envs.mongoQueryConnection, {
+      dbName: 'transactions' // TODO
+    }),
     HealthModule,
     TransferModule,
     ThTracingModule.registerLoggerAsync({

@@ -287,10 +287,10 @@ Se utiliza **kebab-case** (`minusculas-con-guiones`) para todos los nombres de a
 - Casos de uso → `*.use-case.ts` → `create-deposit.use-case.ts`
 - Contratos → `*.contract.ts`
 - Repositorios → `*.repository.ts` → `hello.repository.ts`
-- DTOs → `*.dto.ts` → `deposit.dto.ts`
+- DTOs → `*.dto.ts` → `create-deposit-request.dto.ts`
 - Controladores → `*.controller.ts` → `deposit.controller.ts`
 - Interceptores → `*.interceptor.ts` → `deposit.interceptor.spec.ts`
-- Value Objects → `*.vo.ts` → `message.vo.ts`
+- Value Objects → `*.vo.ts`
 
 #### 📝 Contenido interno
 

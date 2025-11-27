@@ -9,7 +9,6 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 var CredibancoClientAdapter_1;
-var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CredibancoClientAdapter = void 0;
 const common_1 = require("@nestjs/common");
@@ -50,6 +49,7 @@ let CredibancoClientAdapter = CredibancoClientAdapter_1 = class CredibancoClient
 exports.CredibancoClientAdapter = CredibancoClientAdapter;
 exports.CredibancoClientAdapter = CredibancoClientAdapter = CredibancoClientAdapter_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [axios_1.HttpService, typeof (_a = typeof themis_1.ThLoggerService !== "undefined" && themis_1.ThLoggerService) === "function" ? _a : Object])
+    __metadata("design:paramtypes", [axios_1.HttpService,
+        themis_1.ThLoggerService])
 ], CredibancoClientAdapter);
 //# sourceMappingURL=credibanco-client.adapter.js.map

@@ -1,23 +1,23 @@
-import { IsNotEmpty, IsString, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
-import { TransactionDataDto } from './transaction-data.dto';
+import { TransactionResponseDto } from './transaction.dto';
+import { NotificationDto } from './notification.dto';
+
+export class TransactionDataDto {
+  @Type(() => TransactionResponseDto)
+  transaction: TransactionResponseDto;
+
+  @Type(() => NotificationDto)
+  notification?: NotificationDto[];
+
+  additionalData?: Record<string, string>;
+}
 
 export class CreateTransferResponseDto {
-  @IsNotEmpty()
-  @IsString()
-  transactionId: string;
-
-  @IsNotEmpty()
-  @IsString()
   responseCode: string;
 
-  @IsNotEmpty()
-  @IsString()
   message: string;
 
-  @IsNotEmpty()
-  @ValidateNested()
   @Type(() => TransactionDataDto)
-  data: TransactionDataDto;
+  data?: TransactionDataDto;
 }

@@ -1,33 +1,16 @@
-import { Transaction } from './transaction.vo';
+import { InvalidTransactionPartiesError } from '../errors';
+
+import { TransactionParty } from './transaction-party.vo';
 
 export class TransactionParties {
-  private readonly _sender: Transaction;
-  private readonly _recipient: Transaction;
+  readonly payer?: TransactionParty;
+  readonly payee: TransactionParty;
 
-  constructor(sender: Transaction, recipient: Transaction) {
-    this._sender = sender;
-    this._recipient = recipient;
-    this.validate();
-  }
-
-  private validate(): void {
-    if (!this._sender) {
-      throw new Error('TransactionParties: sender must not be null');
+  constructor(payer: TransactionParty | undefined, payee: TransactionParty) {
+    if (!payee.accountInfo) {
+      throw new InvalidTransactionPartiesError('payee.accountInfo');
     }
-    if (!this._recipient) {
-      throw new Error('TransactionParties: recipient must not be null');
-    }
-  }
-
-  get sender(): Transaction {
-    return this._sender;
-  }
-
-  get recipient(): Transaction {
-    return this._recipient;
-  }
-
-  equals(other: TransactionParties): boolean {
-    return this._sender.equals(other._sender) && this._recipient.equals(other._recipient);
+    this.payer = payer;
+    this.payee = payee;
   }
 }

@@ -7,7 +7,7 @@ export class NotificationDto {
 
   @IsNotEmpty()
   @IsString()
-  cellphone: string;
+  value: string;
 
   @IsNotEmpty()
   @IsString()

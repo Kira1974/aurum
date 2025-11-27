@@ -12,7 +12,6 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
 var CreateTransferUseCase_1;
-var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateTransferUseCase = void 0;
 const common_1 = require("@nestjs/common");
@@ -38,6 +37,6 @@ exports.CreateTransferUseCase = CreateTransferUseCase;
 exports.CreateTransferUseCase = CreateTransferUseCase = CreateTransferUseCase_1 = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, common_1.Inject)(tokens_constant_1.TOKENS.GATEWAY_CLIENT)),
-    __metadata("design:paramtypes", [Object, typeof (_a = typeof themis_1.ThLoggerService !== "undefined" && themis_1.ThLoggerService) === "function" ? _a : Object])
+    __metadata("design:paramtypes", [Object, themis_1.ThLoggerService])
 ], CreateTransferUseCase);
 //# sourceMappingURL=create-transfer.use-case.js.map

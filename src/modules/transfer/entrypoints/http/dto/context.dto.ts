@@ -11,14 +11,6 @@ export class ContextDto {
 
   @IsNotEmpty()
   @IsString()
-  h2hPointOfSale: string;
-
-  @IsNotEmpty()
-  @IsString()
-  transactionalPassword: string;
-
-  @IsNotEmpty()
-  @IsString()
   productCode: string;
 
   @IsNotEmpty()

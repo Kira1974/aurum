@@ -9,6 +9,8 @@ interface EnvVars {
   MIN_LEVEL: string;
   LOGS_PROPERTIES: boolean;
   LOGS_COLORS: boolean;
+
+  MONGO_QUERY_CONNECTION: string;
 }
 
 const envsSchema = joi
@@ -19,7 +21,9 @@ const envsSchema = joi
     VERSION: joi.string().default('1.0.0'),
     MIN_LEVEL: joi.string().default('INFO'),
     LOGS_PROPERTIES: joi.boolean().default(true),
-    LOGS_COLORS: joi.boolean().default(true)
+    LOGS_COLORS: joi.boolean().default(true),
+
+    MONGO_QUERY_CONNECTION: joi.string().required()
   })
   .unknown(true);
 
@@ -38,5 +42,7 @@ export const envs = {
   version: envVars.VERSION,
   minLevel: envVars.MIN_LEVEL,
   logsProperties: envVars.LOGS_PROPERTIES,
-  logsColors: envVars.LOGS_COLORS
+  logsColors: envVars.LOGS_COLORS,
+
+  mongoQueryConnection: envVars.MONGO_QUERY_CONNECTION
 };

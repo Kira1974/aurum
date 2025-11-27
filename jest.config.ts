@@ -9,7 +9,8 @@ module.exports = {
   testEnvironment: 'node',
   moduleNameMapper: {
     '^~/(.*)$': '<rootDir>/src/$1',
-    '^src/(.*)$': '<rootDir>/src/$1'
+    '^src/(.*)$': '<rootDir>/src/$1',
+    '^@test/(.*)$': '<rootDir>/test/$1'
   },
   verbose: true,
   testTimeout: 30000,
@@ -28,9 +29,7 @@ module.exports = {
     '!src/**/*.module.ts',
     '!src/**/*.domain.ts',
     '!src/**/*.dto.ts',
-    '!src/**/*.vo.ts',
     '!src/**/*.config.ts',
-    '!src/**/*.entity.ts',
     '!src/**/*.enum.ts',
     '!src/**/*.types.ts',
     '!src/**/*.constants.ts',

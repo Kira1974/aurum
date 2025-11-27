@@ -3,174 +3,118 @@ import {
   CreateTransferResponseDto,
   AmountDto,
   ContextDto,
-  AdditionalDataDto,
   TransactionDataDto,
-  TransactionDto,
-  TransactionPartiesResponseDto,
-  MerchantResponseDto,
+  TransactionResponseDto,
   NotificationDto
 } from '~/modules/transfer/entrypoints/http/dto';
-import { Transfer } from '~/modules/transfer/domain/entities/transfer.entity';
-import { TransferProps } from '~/modules/transfer/domain/models/transfer.model';
+import { Transfer, TransferProps } from '~/modules/transfer/domain/entities/transfer.entity';
 import {
   Amount,
-  AdditionalData,
-  TransferContext,
-  TransactionKey,
-  Transaction,
-  TransactionParties
+  TransactionContext,
+  TransactionParty,
+  TransactionParties,
+  AccountInfo,
+  Notification
 } from '~/modules/transfer/domain/value-objects';
 import { AdditionalDataKey } from '~/modules/transfer/domain/constants/additional-data-key.enum';
+import { TransferStatus } from '~/modules/transfer/domain/constants/transfer-status.enum';
+import { buildJsonFromEnum } from '~/shared/utils/util-json.util';
 
 export class TransferMapper {
   static toEntity(dto: CreateTransferRequestDto): Transfer {
-    const additionalData = this.toAdditionalData(dto.additionalData);
+    const { context, transaction, additionalData, transactionParties } = dto;
+    const { payer: payerIn, payee: payeeIn } = transactionParties;
 
-    const sender = this.toTransaction(dto.transactionParties.payer);
-    const recipient = this.toTransaction(dto.transactionParties.payee, dto.transactionParties.payee.key);
-    const transactionParties = new TransactionParties(sender, recipient);
+    const payer = payerIn ? this.toTransactionParty(payerIn) : undefined;
+    const payee = this.toTransactionParty(payeeIn, payeeIn.accountInfo);
 
     const props: TransferProps = {
-      amount: this.toAmount(dto.transaction.amount),
-      description: dto.transaction.description,
-      additionalData,
-      context: this.toTransferContext(dto.context),
-      transactionParties,
-      transactionId: dto.transaction.transactionId
+      context: this.toTransactionContext(context),
+      transactionId: transaction.transactionId,
+      amount: this.toAmount(transaction.amount),
+      description: transaction.description,
+      transactionParties: new TransactionParties(payer, payee),
+      additionalData: additionalData ? this.toAdditionalData(additionalData) : undefined
     };
-
     return Transfer.create(props);
   }
 
-  static toCreateTransferResponseDto(
-    transfer: Transfer,
-    payerCustomerId?: string,
-    payeeCustomerId?: string,
-    merchantCustomerId?: string,
-    notificationChannel?: string,
-    notificationCellphone?: string,
-    notificationMessage?: string
-  ): CreateTransferResponseDto {
-    const responseCode = transfer.additionalData?.get(AdditionalDataKey.RESPONSE_CODE) || 'TRANSACTION_PENDING';
-    const message = transfer.additionalData?.get(AdditionalDataKey.RESPONSE_MESSAGE) || 'Transfer pending for provider';
-    const transaction = this.toTransactionDto(transfer);
-    const transactionParties = this.toTransactionPartiesResponseDto(transfer, payerCustomerId, payeeCustomerId);
-    const merchant = this.toMerchantResponseDto(merchantCustomerId);
-    const notification = this.toNotificationDto(
-      transfer,
-      notificationChannel,
-      notificationCellphone,
-      notificationMessage
-    );
+  static toCreateTransferResponseDto(transfer: Transfer): CreateTransferResponseDto {
+    // TODO: El dominio generará responseCode y message si no vienen del gateway
+    // Por ahora, se obtienen de additionalData (donde se guardan cuando vienen del gateway)
+    const responseCode =
+      (transfer.additionalData?.[AdditionalDataKey.RESPONSE_CODE] as TransferStatus | undefined) ?? '';
+    const message = transfer.additionalData?.[AdditionalDataKey.RESPONSE_MESSAGE] ?? '';
+    const transaction = this.toTransactionResponseDto(transfer);
+
+    const notification = transfer.notification ? this.toNotificationDto(transfer.notification) : undefined;
+
+    const additionalData = transfer.additionalData ? this.toAdditionalData(transfer.additionalData) : undefined;
     const data: TransactionDataDto = {
       transaction,
-      transactionParties,
-      merchant,
-      notification
+      notification,
+      additionalData
     };
 
     return {
-      transactionId: transfer.transactionId,
       responseCode,
       message,
       data
     };
   }
 
-  private static toTransactionDto(transfer: Transfer): TransactionDto {
+  private static toTransactionResponseDto(transfer: Transfer): TransactionResponseDto {
     return {
-      amount: {
-        value: transfer.amount.value,
-        currency: transfer.amount.currency
-      },
-      description: transfer.description
+      transactionId: transfer.transactionId,
+      externalTransactionId: transfer.externalTransactionId
     };
   }
 
-  private static toTransactionPartiesResponseDto(
-    transfer: Transfer,
-    payerCustomerId?: string,
-    payeeCustomerId?: string
-  ): TransactionPartiesResponseDto {
-    return {
-      payer: {
-        customerId: payerCustomerId || transfer.transactionParties.sender.customerId
-      },
-      payee: {
-        customerId: payeeCustomerId || transfer.transactionParties.recipient.customerId
+  private static toNotificationDto(notification: Notification): NotificationDto[] {
+    return [
+      {
+        channel: notification.channel,
+        value: notification.value,
+        message: notification.message
       }
-    };
-  }
-
-  private static toMerchantResponseDto(merchantCustomerId?: string): MerchantResponseDto {
-    return {
-      customerId: merchantCustomerId || 'CUST-003'
-    };
-  }
-
-  private static toNotificationDto(
-    transfer: Transfer,
-    notificationChannel?: string,
-    notificationCellphone?: string,
-    notificationMessage?: string
-  ): NotificationDto {
-    const recipientKey = transfer.transactionParties.recipient.key;
-    const cellphone =
-      recipientKey?.type === 'PHONE'
-        ? recipientKey.value
-        : transfer.additionalData?.get(AdditionalDataKey.CELLPHONE) || '3001234567';
-
-    return {
-      channel: notificationChannel || 'SMS',
-      cellphone: notificationCellphone || cellphone,
-      message:
-        notificationMessage ||
-        `Tu pago de $${transfer.amount.value} ${transfer.amount.currency} esta pendiente de confirmacion.`
-    };
+    ];
   }
 
   private static toAmount(amountDto: AmountDto): Amount {
     return new Amount(amountDto.value, amountDto.currency);
   }
 
-  private static toAdditionalData(additionalDataDto?: AdditionalDataDto): AdditionalData | undefined {
-    if (!additionalDataDto) {
+  private static toAdditionalData(additionalDataDto: Record<string, string>): Record<string, string> | undefined {
+    const additionalDataMap = buildJsonFromEnum(additionalDataDto, AdditionalDataKey);
+    if (!Object.keys(additionalDataMap).length) {
       return undefined;
     }
-
-    const additionalDataMap: Partial<Record<AdditionalDataKey, string>> = {};
-
-    if (additionalDataDto[AdditionalDataKey.KEY]) {
-      additionalDataMap[AdditionalDataKey.KEY] = additionalDataDto[AdditionalDataKey.KEY]!;
-    }
-
-    if (additionalDataDto[AdditionalDataKey.CELLPHONE]) {
-      additionalDataMap[AdditionalDataKey.CELLPHONE] = additionalDataDto[AdditionalDataKey.CELLPHONE]!;
-    }
-
-    if (additionalDataDto[AdditionalDataKey.COMPANY_NAME]) {
-      additionalDataMap[AdditionalDataKey.COMPANY_NAME] = additionalDataDto[AdditionalDataKey.COMPANY_NAME]!;
-    }
-
-    return Object.keys(additionalDataMap).length > 0 ? new AdditionalData(additionalDataMap) : undefined;
+    return additionalDataMap;
   }
 
-  private static toTransferContext(contextDto: ContextDto): TransferContext {
-    return new TransferContext(
+  private static toTransactionContext(contextDto: ContextDto): TransactionContext {
+    return new TransactionContext(
       contextDto.pointOfSale,
       contextDto.terminal,
-      contextDto.h2hPointOfSale,
-      contextDto.transactionalPassword,
       contextDto.productCode,
       contextDto.trace
     );
   }
 
-  private static toTransaction(
-    party: { customerId: string; documentType: string; documentNumber: string },
-    key?: { type: string; value: string }
-  ): Transaction {
-    const transactionKey = key ? new TransactionKey(key.type, key.value) : undefined;
-    return new Transaction(party.customerId, party.documentType, party.documentNumber, transactionKey);
+  private static toTransactionParty(
+    party: {
+      customerId?: string;
+      documentType?: string;
+      documentNumber?: string;
+      name?: string;
+      cellphone?: string;
+    },
+    accountInfoIn?: { value: string }
+  ): TransactionParty {
+    const { customerId = '', documentType = '', documentNumber = '', name = '', cellphone = '' } = party;
+
+    const accountInfo = accountInfoIn?.value ? new AccountInfo(accountInfoIn.value) : undefined;
+
+    return new TransactionParty(customerId, documentType, documentNumber, name, cellphone, accountInfo);
   }
 }

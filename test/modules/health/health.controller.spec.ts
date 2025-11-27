@@ -31,10 +31,6 @@ describe('HealthController', () => {
     memoryHealthIndicator = module.get(MemoryHealthIndicator);
   });
 
-  it('should be defined the controller', () => {
-    expect(controller).toBeDefined();
-  });
-
   it('should return standard health check response', async () => {
     const mockHealthResult: HealthCheckResult = {
       status: 'ok',

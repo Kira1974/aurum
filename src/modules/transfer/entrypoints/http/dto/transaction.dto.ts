@@ -3,7 +3,11 @@ import { Type } from 'class-transformer';
 
 import { AmountDto } from './amount.dto';
 
-export class TransactionDto {
+export class TransactionRequestDto {
+  @IsNotEmpty()
+  @IsString()
+  transactionId: string;
+
   @IsNotEmpty()
   @ValidateNested()
   @Type(() => AmountDto)
@@ -12,4 +16,9 @@ export class TransactionDto {
   @IsNotEmpty()
   @IsString()
   description: string;
+}
+
+export class TransactionResponseDto {
+  transactionId: string;
+  externalTransactionId?: string;
 }

@@ -1,6 +1,6 @@
 import { Transfer } from '~/modules/transfer/domain/entities/transfer.entity';
-import { ProviderDecision } from '~/modules/transfer/domain/value-objects';
+import { TransferGatewayResult } from '~/modules/transfer/domain/types/transfer-gateway-result.type';
 
 export interface IGatewayClient {
-  createTransfer(transfer: Transfer): Promise<ProviderDecision>;
+  createTransfer(transfer: Transfer): Promise<TransferGatewayResult>;
 }
